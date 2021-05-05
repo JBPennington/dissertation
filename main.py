@@ -142,6 +142,46 @@ def plot_optimal_steady_state_vnt_and_egr_set_points_for_load_transient(style):
     plt.show(block=False)
 
 
+def plot_speed_load_transient_time_comparison_of_boost_and_egr(style):
+    sns.set_style(style)
+
+    transient_times = [2, 4, 6, 8, 10]
+
+    x_start = -2.0
+    x_end = 12.0
+
+    speed_load_time_data = []
+    for time in transient_times:
+        speed_load_time_data.append(pd.read_csv(r"./data/SpeedLoadComparison_" + str(time) +
+                                                "SecondTransient_with_BaselineControl.csv",
+                                                sep=r'\s*,\s*', header=0, engine='python'))
+
+    fig, (subplot0, subplot1) = plt.subplots(2, 1, figsize=(7.5, 9))
+
+    for idx in range(len(transient_times)):
+        sns.lineplot(x=speed_load_time_data[idx]['TimeToEvent'], y=speed_load_time_data[idx]["Boost (kPa)"],
+                     label=str(transient_times[idx]) + "s", ax=subplot0, legend=False)
+    subplot0.set_xlabel(None)
+    subplot0.set_xlim([x_start, x_end])
+    subplot0.set_ylabel("Boost Pressure (kPa)", fontsize=18)
+    subplot0.set_ylim([0, 120])
+
+    for idx in range(len(transient_times)):
+        sns.lineplot(x=speed_load_time_data[idx]['TimeToEvent'], y=speed_load_time_data[idx]["EGR Meter"],
+                     label=str(transient_times[idx]) + "s", ax=subplot1, legend=False)
+    subplot1.set_xlim([x_start, x_end])
+    subplot1.set_ylabel("EGR Rate (% Mass)", fontsize=18)
+    subplot1.set_ylim([5, 35])
+
+    subplot0.legend(fontsize=14)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/speed_load_transient_time_comparison.png")
+    plt.show(block=False)
+
+
 if __name__ == '__main__':
     sns.set_theme()
     sns.set_palette(sns.color_palette("muted"))
@@ -153,6 +193,8 @@ if __name__ == '__main__':
     plot_optimal_vnt_and_egr_strategies_for_speed_transient("darkgrid")     # "ticks" is a good alternative
 
     plot_optimal_steady_state_vnt_and_egr_set_points_for_load_transient("darkgrid")
+
+    plot_speed_load_transient_time_comparison_of_boost_and_egr("darkgrid")
 
     plt.show(block=True)
 
