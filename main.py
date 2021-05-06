@@ -461,6 +461,238 @@ def plot_transient_time_comparison_bsno(transient_type, style):
     plt.show(block=False)
 
 
+def plot_policy_comparison_boost(policies, transient_type, style):
+    sns.set_style(style)
+
+    transient_complete_time = []
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + ".csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+        transient_completion_idx = data_set[data_set['Torque'].gt(490)].index[0]
+        transient_complete_time.append(data_set['TimeToEvent'][transient_completion_idx])
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = ["s", "^", "X", "*", "o"]
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=steady_state_data['Boost'], label="Steady State",
+                    ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        interp = interpolate.interp1d(policy_data[idx]['TimeToEvent'], policy_data[idx]['Boost (kPa)'])
+        values = []
+        for percentage in percent_complete:
+            values.append(interp(transient_complete_time[idx] * percentage).item(0))
+
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    ax.set_ylabel("Boost Pressure (kPa)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_policy_comparison_boost.png")
+    plt.show(block=False)
+
+
+def plot_policy_comparison_egr(policies, transient_type, style):
+    sns.set_style(style)
+
+    transient_complete_time = []
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + ".csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+        transient_completion_idx = data_set[data_set['Torque'].gt(490)].index[0]
+        transient_complete_time.append(data_set['TimeToEvent'][transient_completion_idx])
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = ["s", "^", "X", "*", "o"]
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=steady_state_data['EGRMass'], label="Steady State",
+                    ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        interp = interpolate.interp1d(policy_data[idx]['TimeToEvent'], policy_data[idx]['EGR Meter'])
+        values = []
+        for percentage in percent_complete:
+            values.append(interp(transient_complete_time[idx] * percentage).item(0))
+
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    ax.set_ylabel("EGR Rate (% mass)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_policy_comparison_egr_rate.png")
+    plt.show(block=False)
+
+
+def plot_policy_comparison_bsfc(policies, transient_type, style):
+    sns.set_style(style)
+
+    transient_complete_time = []
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + ".csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+        transient_completion_idx = data_set[data_set['Torque'].gt(490)].index[0]
+        transient_complete_time.append(data_set['TimeToEvent'][transient_completion_idx])
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = ["s", "^", "X", "*", "o"]
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=inv_hp_to_inv_kW(steady_state_data['BSFC']),
+                    label="Steady State", ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        interp = interpolate.interp1d(policy_data[idx]['TimeToEvent'], inv_hp_to_inv_kW(policy_data[idx]['BSFC']))
+        values = []
+        for percentage in percent_complete:
+            values.append(interp(transient_complete_time[idx] * percentage).item(0))
+
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    ax.set_ylabel("BSFC (g/kWh)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_policy_comparison_bsfc.png")
+    plt.show(block=False)
+
+
+def plot_policy_comparison_bspm(policies, transient_type, style):
+    sns.set_style(style)
+
+    transient_complete_time = []
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + ".csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+        transient_completion_idx = data_set[data_set['Torque'].gt(490)].index[0]
+        transient_complete_time.append(data_set['TimeToEvent'][transient_completion_idx])
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = ["s", "^", "X", "*", "o"]
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=inv_hp_to_inv_kW(steady_state_data['BSPM']),
+                    label="Steady State", ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        interp = interpolate.interp1d(policy_data[idx]['TimeToEvent'], inv_hp_to_inv_kW(policy_data[idx]['BSPM']))
+        values = []
+        for percentage in percent_complete:
+            values.append(interp(transient_complete_time[idx] * percentage).item(0))
+
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    ax.set_yscale("log")
+    ax.set_ylabel("BSPM (g/kWh)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_policy_comparison_bspm.png")
+    plt.show(block=False)
+
+
+def plot_policy_comparison_bsno(policies, transient_type, style):
+    sns.set_style(style)
+
+    transient_complete_time = []
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + ".csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+        transient_completion_idx = data_set[data_set['Torque'].gt(490)].index[0]
+        transient_complete_time.append(data_set['TimeToEvent'][transient_completion_idx])
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = ["s", "^", "X", "*", "o"]
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=inv_hp_to_inv_kW(steady_state_data['BSNO']),
+                    label="Steady State", ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        interp = interpolate.interp1d(policy_data[idx]['TimeToEvent'], inv_hp_to_inv_kW(policy_data[idx]['BSNO']))
+        values = []
+        for percentage in percent_complete:
+            values.append(interp(transient_complete_time[idx] * percentage).item(0))
+
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    ax.set_yscale("log")
+    ax.set_ylabel("BSNO (g/kWh)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_policy_comparison_bsno.png")
+    plt.show(block=False)
+
+
 if __name__ == '__main__':
     sns.set_theme()
     sns.set_palette(sns.color_palette("muted"))
@@ -509,7 +741,16 @@ if __name__ == '__main__':
     #
     # plot_transient_time_comparison_bsno("SpeedLoad", plot_style)
 
-
+    best_load_policies = [1, 5, 8, 9, 10]
+    # plot_policy_comparison_boost(best_load_policies, "Load", plot_style)
+    #
+    # plot_policy_comparison_egr(best_load_policies, "Load", plot_style)
+    #
+    # plot_policy_comparison_bsfc(best_load_policies, "Load", plot_style)
+    #
+    # plot_policy_comparison_bspm(best_load_policies, "Load", plot_style)
+    #
+    # plot_policy_comparison_bsno(best_load_policies, "Load", plot_style)
 
     plt.show(block=True)
 
