@@ -1,12 +1,15 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from scipy import interpolate
 
 
 common_label_font_size = 16
 common_legend_font_size = 12
 common_annotation_font_size = 14
+
+common_marker_styles = ["s", "^", "D", "h", "o"]
 
 
 def lbft_to_Nm(val):
@@ -195,45 +198,44 @@ def plot_optimal_steady_state_vnt_and_egr_set_points_for_load_transient(style):
     plt.show(block=False)
 
 
-def plot_speed_load_transient_time_comparison_of_boost_and_egr(style):
+def plot_transient_time_comparison_of_boost_and_egr(transient_type, style, custom_x_lim, custom_boost_y_lim, custom_egr_y_lim):
     sns.set_style(style)
 
     transient_times = [2, 4, 6, 8, 10]
 
-    x_start = -2.0
-    x_end = 12.0
+    x_start = custom_x_lim[0]
+    x_end = custom_x_lim[-1]
 
-    speed_load_time_data = []
+    time_data = []
     for time in transient_times:
-        speed_load_time_data.append(pd.read_csv(r"./data/SpeedLoadComparison_" + str(time) +
+        time_data.append(pd.read_csv(r"./data/" + transient_type + "Comparison_" + str(time) +
                                                 "SecondTransient_with_BaselineControl.csv",
                                                 sep=r'\s*,\s*', header=0, engine='python'))
 
     fig, (subplot0, subplot1) = plt.subplots(2, 1, figsize=(7.5, 9))
 
     for idx in range(len(transient_times)):
-        sns.lineplot(x=speed_load_time_data[idx]['TimeToEvent'], y=speed_load_time_data[idx]["Boost (kPa)"],
+        sns.lineplot(x=time_data[idx]['TimeToEvent'], y=time_data[idx]["Boost (kPa)"],
                      label=str(transient_times[idx]) + "s", ax=subplot0, legend=False)
     subplot0.set_xlabel(None)
     subplot0.set_xlim([x_start, x_end])
     subplot0.set_ylabel("Boost Pressure (kPa)", fontsize=common_label_font_size)
-    subplot0.set_ylim([0, 120])
+    subplot0.set_ylim(custom_boost_y_lim)
 
     for idx in range(len(transient_times)):
-        sns.lineplot(x=speed_load_time_data[idx]['TimeToEvent'], y=speed_load_time_data[idx]["EGR Meter"],
+        sns.lineplot(x=time_data[idx]['TimeToEvent'], y=time_data[idx]["EGR Meter"],
                      label=str(transient_times[idx]) + "s", ax=subplot1, legend=False)
     subplot1.set_xlim([x_start, x_end])
     subplot1.set_ylabel("EGR Rate (% Mass)", fontsize=common_label_font_size)
-    subplot1.set_ylim([5, 35])
+    subplot1.set_ylim(custom_egr_y_lim)
 
     subplot0.legend(fontsize=common_legend_font_size)
 
     plt.tight_layout()
     sns.despine()
 
-    fig.savefig("figures/speed_load_transient_time_comparison.png")
+    fig.savefig("figures/" + transient_type + "_transient_time_comparison.png")
     plt.show(block=False)
-
 
 def plot_transient_time_comparison_boost(transient_type, style):
     sns.set_style(style)
@@ -250,7 +252,7 @@ def plot_transient_time_comparison_boost(transient_type, style):
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -279,6 +281,49 @@ def plot_transient_time_comparison_boost(transient_type, style):
     fig.savefig("figures/" + transient_type + "_transient_time_comparison_boost.png")
     plt.show(block=False)
 
+def plot_load_point_comparison_boost(transient_type, style):
+    sns.set_style(style)
+
+    transient_times = [2, 4, 6, 8, 10]
+
+    load_point_data = []
+    for time in transient_times:
+        load_point_data.append(pd.read_csv(r"./data/" + transient_type + "Comparison_" + str(time) +
+                                           "SecondTransient_with_BaselineControl_LoadPoints.csv",
+                                           sep=r'\s*,\s*', header=0, engine='python'))
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("Boost")
+    print("Steady State: " + str(np.mean(steady_state_data['Boost'])) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=steady_state_data['Boost'], label="Steady State",
+                    ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(transient_times)):
+        values = load_point_data[idx]['Boost']
+        print(str(transient_times[idx]) + ": " + str(np.mean(values)) + "\t")
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label=str(transient_times[idx]) + "s",
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    ax.set_ylabel("Boost Pressure (kPa)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_load_point_comparison_boost.png")
+    plt.show(block=False)
 
 def plot_transient_time_comparison_egr(transient_type, style, custom_y_limits=None):
     sns.set_style(style)
@@ -295,7 +340,7 @@ def plot_transient_time_comparison_egr(transient_type, style, custom_y_limits=No
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -326,8 +371,53 @@ def plot_transient_time_comparison_egr(transient_type, style, custom_y_limits=No
     fig.savefig("figures/" + transient_type + "_transient_time_comparison_egr_rate.png")
     plt.show(block=False)
 
+def plot_load_point_comparison_egr(transient_type, style, number_legend_columns=1, custom_y_limits=None):
+    sns.set_style(style)
 
-def plot_transient_time_comparison_bsfc(transient_type, style, custom_y_limits=None):
+    transient_times = [2, 4, 6, 8, 10]
+
+    load_point_data = []
+    for time in transient_times:
+        load_point_data.append(pd.read_csv(r"./data/" + transient_type + "Comparison_" + str(time) +
+                                           "SecondTransient_with_BaselineControl_LoadPoints.csv",
+                                           sep=r'\s*,\s*', header=0, engine='python'))
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("EGRMass")
+    print("Steady State: " + str(np.mean(steady_state_data['EGRMass'])) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=steady_state_data['EGRMass'], label="Steady State",
+                    ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(transient_times)):
+        values = load_point_data[idx]['EGRMass']
+        print(str(transient_times[idx]) + ": " + str(np.mean(values)) + "\t")
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label=str(transient_times[idx]) + "s",
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    if custom_y_limits is not None:
+        ax.set_ylim(custom_y_limits)
+    ax.set_ylabel("EGR Rate (% mass)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_load_point_comparison_egr.png")
+    plt.show(block=False)
+
+def plot_transient_time_comparison_bsfc(transient_type, style, number_legend_columns=1, custom_y_limits=None):
     sns.set_style(style)
 
     transient_times = [2, 4, 6, 8, 10]
@@ -342,7 +432,7 @@ def plot_transient_time_comparison_bsfc(transient_type, style, custom_y_limits=N
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -365,12 +455,59 @@ def plot_transient_time_comparison_bsfc(transient_type, style, custom_y_limits=N
     ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
     ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
     ax.set_xticklabels([100 * x for x in percent_complete])
-    ax.legend(fontsize=common_legend_font_size)
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
 
     plt.tight_layout()
     sns.despine()
 
     fig.savefig("figures/" + transient_type + "_transient_time_comparison_bsfc.png")
+    plt.show(block=False)
+
+
+def plot_load_point_comparison_bsfc(transient_type, style, number_legend_columns=1, custom_y_limits=None):
+    sns.set_style(style)
+
+    transient_times = [2, 4, 6, 8, 10]
+
+    load_point_data = []
+    for time in transient_times:
+        load_point_data.append(pd.read_csv(r"./data/" + transient_type + "Comparison_" + str(time) +
+                                           "SecondTransient_with_BaselineControl_LoadPoints.csv",
+                                           sep=r'\s*,\s*', header=0, engine='python'))
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("BSFC")
+    print("Steady State: " + str(np.mean(inv_hp_to_inv_kW(steady_state_data['BSFC']))) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=inv_hp_to_inv_kW(steady_state_data['BSFC']),
+                    label="Steady State", ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(transient_times)):
+        values = inv_hp_to_inv_kW(load_point_data[idx]['BSFC'])
+        print(str(transient_times[idx]) + ": " + str(np.mean(values)) + "\t")
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label=str(transient_times[idx]) + "s",
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    if custom_y_limits is not None:
+        ax.set_ylim(custom_y_limits)
+    ax.set_ylabel("BSFC (g/kWh)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_load_point_comparison_bsfc.png")
     plt.show(block=False)
 
 
@@ -389,7 +526,7 @@ def plot_transient_time_comparison_bspm(transient_type, style, custom_y_limits=N
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -421,6 +558,54 @@ def plot_transient_time_comparison_bspm(transient_type, style, custom_y_limits=N
     plt.show(block=False)
 
 
+def plot_load_point_comparison_bspm(transient_type, style, number_legend_columns=1, custom_y_limits=None):
+    sns.set_style(style)
+
+    transient_times = [2, 4, 6, 8, 10]
+
+    load_point_data = []
+    for time in transient_times:
+        load_point_data.append(pd.read_csv(r"./data/" + transient_type + "Comparison_" + str(time) +
+                                           "SecondTransient_with_BaselineControl_LoadPoints.csv",
+                                           sep=r'\s*,\s*', header=0, engine='python'))
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("BSPM")
+    print("Steady State: " + str(np.mean(inv_hp_to_inv_kW(steady_state_data['BSPM']))) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=inv_hp_to_inv_kW(steady_state_data['BSPM']),
+                    label="Steady State", ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(transient_times)):
+        values = inv_hp_to_inv_kW(load_point_data[idx]['BSPM'])
+        print(str(transient_times[idx]) + ": " + str(np.mean(values)) + "\t")
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label=str(transient_times[idx]) + "s",
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    if custom_y_limits is not None:
+        ax.set_ylim(custom_y_limits)
+    ax.set_yscale("log")
+    ax.set_ylabel("BSPM (g/kWh)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_load_point_comparison_bspm.png")
+    plt.show(block=False)
+
+
 def plot_transient_time_comparison_bsno(transient_type, style):
     sns.set_style(style)
 
@@ -436,7 +621,7 @@ def plot_transient_time_comparison_bsno(transient_type, style):
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -466,6 +651,53 @@ def plot_transient_time_comparison_bsno(transient_type, style):
     plt.show(block=False)
 
 
+def plot_load_point_comparison_bsno(transient_type, style, number_legend_columns=1, custom_y_limits=None):
+    sns.set_style(style)
+
+    transient_times = [2, 4, 6, 8, 10]
+
+    load_point_data = []
+    for time in transient_times:
+        load_point_data.append(pd.read_csv(r"./data/" + transient_type + "Comparison_" + str(time) +
+                                           "SecondTransient_with_BaselineControl_LoadPoints.csv",
+                                           sep=r'\s*,\s*', header=0, engine='python'))
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("BSNO")
+    print("Steady State: " + str(np.mean(inv_hp_to_inv_kW(steady_state_data['BSNO']))) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=inv_hp_to_inv_kW(steady_state_data['BSNO']),
+                    label="Steady State", ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(transient_times)):
+        values = inv_hp_to_inv_kW(load_point_data[idx]['BSNO'])
+        print(str(transient_times[idx]) + ": " + str(np.mean(values)) + "\t")
+        sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label=str(transient_times[idx]) + "s",
+                        ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    if custom_y_limits is not None:
+        ax.set_ylim(custom_y_limits)
+    ax.set_ylabel("BSNO (g/kWh)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_load_point_comparison_bsno.png")
+    plt.show(block=False)
+
+
 def plot_policy_comparison_boost(policies, transient_type, style):
     sns.set_style(style)
 
@@ -482,7 +714,7 @@ def plot_policy_comparison_boost(policies, transient_type, style):
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -515,6 +747,53 @@ def plot_policy_comparison_boost(policies, transient_type, style):
     plt.show(block=False)
 
 
+def plot_load_point_policy_comparison_boost(policies, transient_type, style):
+    sns.set_style(style)
+
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + "_LoadPoints.csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("Boost")
+    print("Steady State: " + str(np.mean(steady_state_data['Boost'])) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=steady_state_data['Boost'], label="Steady State",
+                    ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        values = policy_data[idx]['Boost']
+        print("Policy " + str(policies[idx]) + ": " + str(np.mean(values)) + "\t")
+        if idx == 0:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Baseline",
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+        else:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    ax.set_ylabel("Boost Pressure (kPa)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_load_point_policy_comparison_boost.png")
+    plt.show(block=False)
+
+
 def plot_policy_comparison_egr(policies, transient_type, style, custom_y_limits=None, number_legend_columns=1):
     sns.set_style(style)
 
@@ -531,7 +810,7 @@ def plot_policy_comparison_egr(policies, transient_type, style, custom_y_limits=
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -566,6 +845,56 @@ def plot_policy_comparison_egr(policies, transient_type, style, custom_y_limits=
     plt.show(block=False)
 
 
+def plot_load_point_policy_comparison_egr(policies, transient_type, style, custom_y_limits=None, number_legend_columns=1):
+    sns.set_style(style)
+
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + "_LoadPoints.csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("EGRMass")
+    print("Steady State: " + str(np.mean(steady_state_data['EGRMass'])) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=steady_state_data['EGRMass'], label="Steady State",
+                    ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        values = policy_data[idx]['EGRMass']
+        print("Policy " + str(policies[idx]) + ": " + str(np.mean(values)) + "\t")
+        if idx == 0:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Baseline",
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+        else:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    if custom_y_limits is not None:
+        ax.set_ylim(custom_y_limits)
+
+    ax.set_ylabel("EGR Rate (% mass)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_load_point_policy_comparison_egr_rate.png")
+    plt.show(block=False)
+
+
 def plot_policy_comparison_bsfc(policies, transient_type, style, custom_y_limits=None, number_legend_columns=1):
     sns.set_style(style)
 
@@ -582,7 +911,7 @@ def plot_policy_comparison_bsfc(policies, transient_type, style, custom_y_limits
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -617,6 +946,57 @@ def plot_policy_comparison_bsfc(policies, transient_type, style, custom_y_limits
     plt.show(block=False)
 
 
+def plot_load_point_policy_comparison_bsfc(policies, transient_type, style, custom_y_limits=None,
+                                           number_legend_columns=1):
+    sns.set_style(style)
+
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + "_LoadPoints.csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("BSFC")
+    print("Steady State: " + str(np.mean(inv_hp_to_inv_kW(steady_state_data['BSFC']))) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=inv_hp_to_inv_kW(steady_state_data['BSFC']),
+                    label="Steady State", ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        values = inv_hp_to_inv_kW(policy_data[idx]['BSFC'])
+        print("Policy " + str(policies[idx]) + ": " + str(np.mean(values)) + "\t")
+        if idx == 0:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Baseline",
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+        else:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    if custom_y_limits is not None:
+        ax.set_ylim(custom_y_limits)
+
+    ax.set_ylabel("BSFC (g/kWh)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_load_point_policy_comparison_bsfc.png")
+    plt.show(block=False)
+
+
 def plot_policy_comparison_bspm(policies, transient_type, style):
     sns.set_style(style)
 
@@ -633,7 +1013,7 @@ def plot_policy_comparison_bspm(policies, transient_type, style):
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -667,6 +1047,58 @@ def plot_policy_comparison_bspm(policies, transient_type, style):
     plt.show(block=False)
 
 
+def plot_load_point_policy_comparison_bspm(policies, transient_type, style, custom_y_limits=None,
+                                           number_legend_columns=1):
+    sns.set_style(style)
+
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + "_LoadPoints.csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("BSPM")
+    print("Steady State: " + str(np.mean(inv_hp_to_inv_kW(steady_state_data['BSPM']))) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=inv_hp_to_inv_kW(steady_state_data['BSPM']),
+                    label="Steady State", ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        values = inv_hp_to_inv_kW(policy_data[idx]['BSPM'])
+        print("Policy " + str(policies[idx]) + ": " + str(np.mean(values)) + "\t")
+        if idx == 0:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Baseline",
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+        else:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    if custom_y_limits is not None:
+        ax.set_ylim(custom_y_limits)
+
+    ax.set_yscale("log")
+    ax.set_ylabel("BSPM (g/kWh)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_load_point_policy_comparison_bspm.png")
+    plt.show(block=False)
+
+
 def plot_policy_comparison_bsno(policies, transient_type, style):
     sns.set_style(style)
 
@@ -683,7 +1115,7 @@ def plot_policy_comparison_bsno(policies, transient_type, style):
                                     sep=r'\s*,\s*', header=0, engine='python')
 
     fig, ax = plt.subplots()
-    marker_styles = ["s", "^", "X", "*", "o"]
+    marker_styles = common_marker_styles
     sizes = 100
 
     percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -717,6 +1149,57 @@ def plot_policy_comparison_bsno(policies, transient_type, style):
     plt.show(block=False)
 
 
+def plot_load_point_policy_comparison_bsno(policies, transient_type, style, custom_y_limits=None,
+                                           number_legend_columns=1):
+    sns.set_style(style)
+
+    policy_data = []
+    for policy in policies:
+        data_set = pd.read_csv(r"./data/" + transient_type + "Comparison_2SecondTransient_with_Policy" +
+                               str(policy) + "_LoadPoints.csv", sep=r'\s*,\s*', header=0, engine='python')
+        policy_data.append(data_set)
+
+    steady_state_data = pd.read_csv(r"./data/" + transient_type + "Comparison_SteadyStates.csv",
+                                    sep=r'\s*,\s*', header=0, engine='python')
+
+    fig, ax = plt.subplots()
+    marker_styles = common_marker_styles
+    sizes = 100
+
+    percent_complete = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    print("BSNO")
+    print("Steady State: " + str(np.mean(inv_hp_to_inv_kW(steady_state_data['BSNO']))) + "\t")
+
+    sns.scatterplot(x=[100 * x for x in percent_complete], y=inv_hp_to_inv_kW(steady_state_data['BSNO']),
+                    label="Steady State", ax=ax, legend=False, s=sizes, marker="D")
+
+    for idx in range(len(policies)):
+        values = inv_hp_to_inv_kW(policy_data[idx]['BSNO'])
+        print("Policy " + str(policies[idx]) + ": " + str(np.mean(values)) + "\t")
+        if idx == 0:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Baseline",
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+        else:
+            sns.scatterplot(x=[100 * x for x in percent_complete], y=values, label="Policy " + str(policies[idx]),
+                            ax=ax, legend=False, s=sizes, marker=marker_styles[idx])
+
+    if custom_y_limits is not None:
+        ax.set_ylim(custom_y_limits)
+
+    ax.set_ylabel("BSNO (g/kWh)", fontsize=common_label_font_size)
+    ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
+    ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
+    ax.set_xticklabels([100 * x for x in percent_complete])
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_load_point_policy_comparison_bsno.png")
+    plt.show(block=False)
+
+
 if __name__ == '__main__':
     sns.set_theme()
     sns.set_palette(sns.color_palette("muted"))
@@ -733,17 +1216,29 @@ if __name__ == '__main__':
     #
     # plot_optimal_steady_state_vnt_and_egr_set_points_for_load_transient(plot_style)
     #
-    # plot_speed_load_transient_time_comparison_of_boost_and_egr(plot_style)
+    # plot_transient_time_comparison_of_boost_and_egr("SpeedLoad", plot_style, [-2, 12], [0, 120], [3, 35])
+    #
+    # plot_transient_time_comparison_of_boost_and_egr("Load", plot_style, [-2, 15], [0, 50], [28, 44])
     #
     # plot_transient_time_comparison_boost("Load", plot_style)
     #
     # plot_transient_time_comparison_egr("Load", plot_style, custom_y_limits=[26, 42])
     #
-    # plot_transient_time_comparison_bsfc("Load", plot_style, custom_y_limits=[160, 340])
+    # plot_transient_time_comparison_bsfc("Load", plot_style, custom_y_limits=[160, 340], number_legend_columns=3)
     #
     # plot_transient_time_comparison_bspm("Load", plot_style, custom_y_limits=[0.01, 10])
     #
     # plot_transient_time_comparison_bsno("Load", plot_style)
+    #
+    # plot_load_point_comparison_boost("Load", plot_style)
+    #
+    # plot_load_point_comparison_egr("Load", plot_style, number_legend_columns=3, custom_y_limits=[26, 40])
+    #
+    # plot_load_point_comparison_bsfc("Load", plot_style, custom_y_limits=[180, 360], number_legend_columns=3)
+    #
+    # plot_load_point_comparison_bspm("Load", plot_style, custom_y_limits=[0.01, 10])
+    #
+    # plot_load_point_comparison_bsno("Load", plot_style)
     #
     # plot_transient_time_comparison_boost("Speed", plot_style)
     #
@@ -770,11 +1265,24 @@ if __name__ == '__main__':
     #
     # plot_policy_comparison_egr(best_load_policies, "Load", plot_style, custom_y_limits=[25, 42], number_legend_columns=3)
     #
-    plot_policy_comparison_bsfc(best_load_policies, "Load", plot_style, custom_y_limits=[100, 500], number_legend_columns=3)
+    # plot_policy_comparison_bsfc(best_load_policies, "Load", plot_style, custom_y_limits=[100, 500], number_legend_columns=3)
     #
     # plot_policy_comparison_bspm(best_load_policies, "Load", plot_style)
     #
     # plot_policy_comparison_bsno(best_load_policies, "Load", plot_style)
+    #
+    # plot_load_point_policy_comparison_boost(best_load_policies, "Load", plot_style)
+    #
+    # plot_load_point_policy_comparison_egr(best_load_policies, "Load", plot_style, custom_y_limits=[25, 42],
+    #                                       number_legend_columns=3)
+    #
+    # plot_load_point_policy_comparison_bsfc(best_load_policies, "Load", plot_style, custom_y_limits=[100, 550],
+    #                                        number_legend_columns=3)
+
+    plot_load_point_policy_comparison_bspm(best_load_policies, "Load", plot_style, custom_y_limits=[0.01, 20],
+                                           number_legend_columns=2)
+
+    # plot_load_point_policy_comparison_bsno(best_load_policies, "Load", plot_style)
 
     plt.show(block=True)
 
