@@ -5,9 +5,9 @@ import numpy as np
 from scipy import interpolate
 
 
-common_label_font_size = 16
-common_legend_font_size = 12
-common_annotation_font_size = 14
+common_label_font_size = 17
+common_legend_font_size = 13
+common_annotation_font_size = 15
 
 common_marker_styles = ["s", "^", "D", "h", "o"]
 
@@ -375,7 +375,7 @@ def plot_load_point_comparison_boost(transient_type, style):
     fig.savefig("figures/" + transient_type + "_load_point_comparison_boost.png")
     plt.show(block=False)
 
-def plot_transient_time_comparison_egr(transient_type, style, custom_y_limits=None):
+def plot_transient_time_comparison_egr(transient_type, style,  number_legend_columns=1, custom_y_limits=None):
     sns.set_style(style)
 
     transient_times = [2, 4, 6, 8, 10]
@@ -413,7 +413,7 @@ def plot_transient_time_comparison_egr(transient_type, style, custom_y_limits=No
     ax.set_xlabel("Transient Percent Complete (%)", fontsize=common_label_font_size)
     ax.set_xticks([100 * x for x in percent_complete])  # <--- set the ticks first
     ax.set_xticklabels([100 * x for x in percent_complete])
-    ax.legend(fontsize=common_legend_font_size)
+    ax.legend(fontsize=common_legend_font_size, ncol=number_legend_columns)
 
     plt.tight_layout()
     sns.despine()
@@ -1269,11 +1269,11 @@ if __name__ == '__main__':
     # plot_transient_time_comparison_of_boost_and_egr("SpeedLoad", plot_style, [-2, 12], [0, 120], [3, 35])
     #
     # plot_transient_time_comparison_of_boost_and_egr("Load", plot_style, [-2, 15], [0, 50], [28, 44])
-    plot_transient_time_comparison_of_boost_and_egr_and_load("Load", plot_style, [-2, 15], [0, 50], [28, 44])
+    # plot_transient_time_comparison_of_boost_and_egr_and_load("Load", plot_style, [-2, 15], [0, 50], [28, 44])
     #
     # plot_transient_time_comparison_boost("Load", plot_style)
     #
-    # plot_transient_time_comparison_egr("Load", plot_style, custom_y_limits=[26, 42])
+    # plot_transient_time_comparison_egr("Load", plot_style, custom_y_limits=[26, 42], number_legend_columns=2)
     #
     # plot_transient_time_comparison_bsfc("Load", plot_style, custom_y_limits=[160, 340], number_legend_columns=3)
     #
@@ -1287,53 +1287,53 @@ if __name__ == '__main__':
     #
     # plot_load_point_comparison_bsfc("Load", plot_style, custom_y_limits=[180, 360], number_legend_columns=3)
     #
-    # plot_load_point_comparison_bspm("Load", plot_style, custom_y_limits=[0.01, 10])
+    # plot_load_point_comparison_bspm("Load", plot_style, custom_y_limits=[0.01, 50])
     #
     # plot_load_point_comparison_bsno("Load", plot_style)
-    #
-    # plot_transient_time_comparison_boost("Speed", plot_style)
-    #
-    # plot_transient_time_comparison_egr("Speed", plot_style)
-    #
-    # plot_transient_time_comparison_bsfc("Speed", plot_style, custom_y_limits=[250, 550])
-    #
-    # plot_transient_time_comparison_bspm("Speed", plot_style, custom_y_limits=[0.01, 10], number_legend_columns=3)
-    #
-    # plot_transient_time_comparison_bsno("Speed", plot_style)
-    #
-    # plot_transient_time_comparison_boost("SpeedLoad", plot_style)
-    #
-    # plot_transient_time_comparison_egr("SpeedLoad", plot_style, custom_y_limits=[10, 34])
-    #
-    # plot_transient_time_comparison_bsfc("SpeedLoad", plot_style, custom_y_limits=[250, 1000])
-    #
-    # plot_transient_time_comparison_bspm("SpeedLoad", plot_style, custom_y_limits=[0.01, 100], number_legend_columns=3)
-    #
-    # plot_transient_time_comparison_bsno("SpeedLoad", plot_style)
+
+    plot_transient_time_comparison_boost("Speed", plot_style)
+
+    plot_transient_time_comparison_egr("Speed", plot_style)
+
+    plot_transient_time_comparison_bsfc("Speed", plot_style, custom_y_limits=[250, 550])
+
+    plot_transient_time_comparison_bspm("Speed", plot_style, custom_y_limits=[0.01, 10], number_legend_columns=3)
+
+    plot_transient_time_comparison_bsno("Speed", plot_style)
+
+    plot_transient_time_comparison_boost("SpeedLoad", plot_style)
+
+    plot_transient_time_comparison_egr("SpeedLoad", plot_style, custom_y_limits=[10, 34])
+
+    plot_transient_time_comparison_bsfc("SpeedLoad", plot_style, custom_y_limits=[250, 1000])
+
+    plot_transient_time_comparison_bspm("SpeedLoad", plot_style, custom_y_limits=[0.01, 100], number_legend_columns=3)
+
+    plot_transient_time_comparison_bsno("SpeedLoad", plot_style)
 
     best_load_policies = [1, 5, 8, 9, 10]
-    # plot_policy_comparison_boost(best_load_policies, "Load", plot_style)
-    #
-    # plot_policy_comparison_egr(best_load_policies, "Load", plot_style, custom_y_limits=[25, 42], number_legend_columns=3)
-    #
-    # plot_policy_comparison_bsfc(best_load_policies, "Load", plot_style, custom_y_limits=[100, 500], number_legend_columns=3)
-    #
-    # plot_policy_comparison_bspm(best_load_policies, "Load", plot_style)
-    #
-    # plot_policy_comparison_bsno(best_load_policies, "Load", plot_style)
-    #
-    # plot_load_point_policy_comparison_boost(best_load_policies, "Load", plot_style)
-    #
-    # plot_load_point_policy_comparison_egr(best_load_policies, "Load", plot_style, custom_y_limits=[25, 42],
-    #                                       number_legend_columns=3)
-    #
-    # plot_load_point_policy_comparison_bsfc(best_load_policies, "Load", plot_style, custom_y_limits=[100, 550],
-    #                                        number_legend_columns=3)
-    #
-    # plot_load_point_policy_comparison_bspm(best_load_policies, "Load", plot_style, custom_y_limits=[0.01, 20],
-    #                                        number_legend_columns=2)
+    plot_policy_comparison_boost(best_load_policies, "Load", plot_style)
 
-    # plot_load_point_policy_comparison_bsno(best_load_policies, "Load", plot_style)
+    plot_policy_comparison_egr(best_load_policies, "Load", plot_style, custom_y_limits=[25, 42], number_legend_columns=3)
+
+    plot_policy_comparison_bsfc(best_load_policies, "Load", plot_style, custom_y_limits=[100, 500], number_legend_columns=3)
+
+    plot_policy_comparison_bspm(best_load_policies, "Load", plot_style)
+
+    plot_policy_comparison_bsno(best_load_policies, "Load", plot_style)
+
+    plot_load_point_policy_comparison_boost(best_load_policies, "Load", plot_style)
+
+    plot_load_point_policy_comparison_egr(best_load_policies, "Load", plot_style, custom_y_limits=[25, 42],
+                                          number_legend_columns=3)
+
+    plot_load_point_policy_comparison_bsfc(best_load_policies, "Load", plot_style, custom_y_limits=[100, 550],
+                                           number_legend_columns=3)
+
+    plot_load_point_policy_comparison_bspm(best_load_policies, "Load", plot_style, custom_y_limits=[0.01, 20],
+                                           number_legend_columns=2)
+
+    plot_load_point_policy_comparison_bsno(best_load_policies, "Load", plot_style)
 
     plt.show(block=True)
 
