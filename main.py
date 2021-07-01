@@ -51,7 +51,7 @@ def plot_torque_curve():
                        length_includes_head=length_includes_head)
     torque_graph.annotate(text='Load', xy=(1000, 1.3558179483 * 280), fontsize=common_annotation_font_size)
     # Load
-    torque_graph.arrow(x=1200, y=1.3558179483 * 500, dx=800, dy=0, width=arrow_widths,head_width=arrow_head_widths,
+    torque_graph.arrow(x=1200, y=1.3558179483 * 500, dx=800, dy=0, width=arrow_widths, head_width=arrow_head_widths,
                        head_length=arrow_head_lengths,
                        length_includes_head=length_includes_head)
     torque_graph.annotate(text='Accel', xy=(1450, 1.3558179483 * 520), fontsize=common_annotation_font_size)
@@ -236,6 +236,56 @@ def plot_transient_time_comparison_of_boost_and_egr(transient_type, style, custo
 
     fig.savefig("figures/" + transient_type + "_transient_time_comparison.png")
     plt.show(block=False)
+
+
+def plot_transient_time_comparison_of_boost_and_egr_and_load(transient_type, style, custom_x_lim, custom_boost_y_lim, custom_egr_y_lim):
+    sns.set_style(style)
+
+    transient_times = [2, 4, 6, 8, 10]
+
+    x_start = custom_x_lim[0]
+    x_end = custom_x_lim[-1]
+
+    time_data = []
+    for time in transient_times:
+        time_data.append(pd.read_csv(r"./data/" + transient_type + "Comparison_" + str(time) +
+                                                "SecondTransient_with_BaselineControl.csv",
+                                                sep=r'\s*,\s*', header=0, engine='python'))
+
+    fig, (subplot0, subplot1, subplot2) = plt.subplots(3, 1, figsize=(7.5, 9))
+
+    for idx in range(len(transient_times)):
+        sns.lineplot(x=time_data[idx]['TimeToEvent'], y=time_data[idx]["Boost (kPa)"],
+                     label=str(transient_times[idx]) + "s", ax=subplot0, legend=False)
+    subplot0.set_xlabel(None)
+    subplot0.set_xlim([x_start, x_end])
+    subplot0.set_ylabel("Boost Pressure (kPa)", fontsize=common_label_font_size)
+    subplot0.set_ylim(custom_boost_y_lim)
+
+    for idx in range(len(transient_times)):
+        sns.lineplot(x=time_data[idx]['TimeToEvent'], y=time_data[idx]["EGR Meter"],
+                     label=str(transient_times[idx]) + "s", ax=subplot1, legend=False)
+    subplot1.set_xlabel(None)
+    subplot1.set_xlim([x_start, x_end])
+    subplot1.set_ylabel("EGR Rate (% Mass)", fontsize=common_label_font_size)
+    subplot1.set_ylim(custom_egr_y_lim)
+
+    for idx in range(len(transient_times)):
+        sns.lineplot(x=time_data[idx]['TimeToEvent'], y=lbft_to_Nm(time_data[idx]["Torque"]),
+                     label=str(transient_times[idx]) + "s", ax=subplot2, legend=False)
+    subplot2.set_xlabel("Time from Event Start")
+    subplot2.set_xlim([x_start, x_end])
+    subplot2.set_ylabel("Torque (Nm)", fontsize=common_label_font_size)
+    subplot2.set_ylim([0, 800])
+
+    subplot0.legend(fontsize=common_legend_font_size)
+
+    plt.tight_layout()
+    sns.despine()
+
+    fig.savefig("figures/" + transient_type + "_transient_time_comparison.png")
+    plt.show(block=False)
+
 
 def plot_transient_time_comparison_boost(transient_type, style):
     sns.set_style(style)
@@ -1219,6 +1269,7 @@ if __name__ == '__main__':
     # plot_transient_time_comparison_of_boost_and_egr("SpeedLoad", plot_style, [-2, 12], [0, 120], [3, 35])
     #
     # plot_transient_time_comparison_of_boost_and_egr("Load", plot_style, [-2, 15], [0, 50], [28, 44])
+    plot_transient_time_comparison_of_boost_and_egr_and_load("Load", plot_style, [-2, 15], [0, 50], [28, 44])
     #
     # plot_transient_time_comparison_boost("Load", plot_style)
     #
@@ -1278,9 +1329,9 @@ if __name__ == '__main__':
     #
     # plot_load_point_policy_comparison_bsfc(best_load_policies, "Load", plot_style, custom_y_limits=[100, 550],
     #                                        number_legend_columns=3)
-
-    plot_load_point_policy_comparison_bspm(best_load_policies, "Load", plot_style, custom_y_limits=[0.01, 20],
-                                           number_legend_columns=2)
+    #
+    # plot_load_point_policy_comparison_bspm(best_load_policies, "Load", plot_style, custom_y_limits=[0.01, 20],
+    #                                        number_legend_columns=2)
 
     # plot_load_point_policy_comparison_bsno(best_load_policies, "Load", plot_style)
 
